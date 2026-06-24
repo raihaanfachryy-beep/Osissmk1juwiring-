@@ -1,0 +1,2846 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMOSIS - Sistem Informasi Manajemen OSIS</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* ===== VARIABLES ===== */
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary-color: #64748b;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #06b6d4;
+            
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0,0,0,0.1);
+            
+            --sidebar-width: 280px;
+            --topbar-height: 64px;
+            
+            --transition-speed: 0.3s;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --shadow-color: rgba(0,0,0,0.3);
+        }
+
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: background var(--transition-speed), color var(--transition-speed);
+            overflow: hidden;
+        }
+
+        /* ===== LOADING SCREEN ===== */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== LOGIN PAGE ===== */
+        .login-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-page.hidden {
+            display: none;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.6s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 28px;
+        }
+
+        .login-header h1 i {
+            margin-right: 10px;
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100%;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            z-index: 100;
+            transition: transform var(--transition-speed) ease;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .sidebar-header h3 i {
+            margin-right: 8px;
+        }
+
+        .sidebar-user {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-user img {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-info span {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info small {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .sidebar .nav {
+            flex: 1;
+            padding: 10px 0;
+        }
+
+        .sidebar .nav-item {
+            margin: 2px 10px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .sidebar .nav-item:hover {
+            background: var(--bg-color);
+        }
+
+        .sidebar .nav-item.active {
+            background: var(--primary-color);
+        }
+
+        .sidebar .nav-item.active .nav-link {
+            color: white !important;
+        }
+
+        .sidebar .nav-link {
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .nav-link .badge {
+            margin-left: auto;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left var(--transition-speed) ease;
+        }
+
+        .sidebar.closed + .main-content {
+            margin-left: 0;
+        }
+
+        /* ===== TOP BAR ===== */
+        .top-bar {
+            height: var(--topbar-height);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .top-bar .btn-link {
+            color: var(--text-color);
+            font-size: 20px;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .top-bar-right img {
+            width: 32px;
+            height: 32px;
+            object-fit: cover;
+        }
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: var(--bg-color);
+        }
+
+        /* ===== CARDS ===== */
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px var(--shadow-color);
+        }
+
+        .stat-card .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .stat-card .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* ===== TABLES ===== */
+        .table-modern {
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-modern thead {
+            background: var(--bg-color);
+        }
+
+        .table-modern th {
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px 15px;
+        }
+
+        .table-modern td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-modern tbody tr:hover {
+            background: var(--bg-color);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* ===== BADGE ROLE ===== */
+        .badge-role {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .sidebar.closed + .main-content {
+                margin-left: 0;
+            }
+            
+            .stat-card .stat-number {
+                font-size: 22px;
+            }
+            
+            .content-area {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 10px;
+            }
+            
+            .login-card {
+                padding: 25px 20px;
+            }
+            
+            .sidebar {
+                width: 280px;
+            }
+        }
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* ===== CHART CONTAINER ===== */
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        /* ===== MISC ===== */
+        .profile-photo {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+        }
+
+        .small-profile-photo {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        [data-theme="dark"] .glass-effect {
+            background: rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loader"></div>
+        <p class="mt-3 text-white">Memuat SIMOSIS...</p>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1><i class="fas fa-school"></i> SIMOSIS</h1>
+                    <p>Sistem Informasi Manajemen OSIS</p>
+                </div>
+                <div class="login-body">
+                    <div id="loginError" class="alert alert-danger d-none">Username atau password salah!</div>
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="loginUsername" placeholder="Masukkan username">
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" placeholder="Masukkan password">
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="handleLogin()">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="d-none">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-school"></i> SIMOSIS</h3>
+                <button class="btn-close btn-close-white" onclick="toggleSidebar()"></button>
+            </div>
+            <div class="sidebar-user">
+                <img id="sidebarUserPhoto" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E👤%3C/text%3E%3C/svg%3E" alt="User Photo" class="rounded-circle">
+                <div class="user-info">
+                    <span id="sidebarUserName">User Name</span>
+                    <small id="sidebarUserRole">Role</small>
+                </div>
+            </div>
+            <ul class="nav flex-column" id="sidebarMenu">
+                <!-- Menu items akan di-generate oleh JavaScript -->
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger w-100" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="main-content">
+            <!-- Top Bar -->
+            <nav class="top-bar">
+                <button class="btn btn-link" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="top-bar-right">
+                    <button class="btn btn-link me-2" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon" id="darkModeIcon"></i>
+                    </button>
+                    <span class="me-2" id="topBarUser">User</span>
+                    <img id="topBarUserPhoto" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E👤%3C/text%3E%3C/svg%3E" alt="User Photo" class="rounded-circle" style="width:32px;height:32px;object-fit:cover;">
+                </div>
+            </nav>
+
+            <!-- Content Area -->
+            <div id="contentArea" class="content-area">
+                <!-- Konten akan di-render oleh JavaScript -->
+            </div>
+        </div>
+    </div>
+    <!-- Modal untuk form -->
+    <div class="modal fade" id="formModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formModalTitle">Form</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="formModalBody">
+                    <!-- Form akan di-generate oleh JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail -->
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalTitle">Detail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailModalBody">
+                    <!-- Detail akan di-generate oleh JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        /**
+         * ============================================================
+         * SIMOSIS - Sistem Informasi Manajemen OSIS
+         * Full JavaScript Application (All-in-One)
+         * ============================================================
+         */
+
+        // ============================================================
+        // DATA DUMMY AWAL
+        // ============================================================
+        const INITIAL_DATA = {
+            users: [
+                { id: 1, username: 'admin', password: 'admin123', nama: 'Admin Utama', role: 'admin', nro: 'ADM-001', kelas: 'XII-1', noHp: '081234567890', foto: '' },
+                { id: 2, username: 'ketua', password: 'ketua123', nama: 'Ahmad Fauzi', role: 'ketua', nro: 'KET-001', kelas: 'XII-2', noHp: '081234567891', foto: '' },
+                { id: 3, username: 'wakil', password: 'wakil123', nama: 'Siti Rahma', role: 'wakil_ketua', nro: 'WAK-001', kelas: 'XII-1', noHp: '081234567892', foto: '' },
+                { id: 4, username: 'sekretaris', password: 'sekretaris123', nama: 'Budi Santoso', role: 'sekretaris', nro: 'SEK-001', kelas: 'XI-1', noHp: '081234567893', foto: '' },
+                { id: 5, username: 'bendahara', password: 'bendahara123', nama: 'Dewi Lestari', role: 'bendahara', nro: 'BEN-001', kelas: 'XI-2', noHp: '081234567894', foto: '' },
+                { id: 6, username: 'pengawas', password: 'pengawas123', nama: 'Rudi Hartono', role: 'pengawas', nro: 'PEN-001', kelas: 'XII-3', noHp: '081234567895', foto: '' },
+                { id: 7, username: 'anggota1', password: 'anggota123', nama: 'Andi Wijaya', role: 'anggota', nro: 'ANG-001', kelas: 'X-1', noHp: '081234567896', foto: '' },
+                { id: 8, username: 'anggota2', password: 'anggota123', nama: 'Bella Putri', role: 'anggota', nro: 'ANG-002', kelas: 'X-2', noHp: '081234567897', foto: '' },
+                { id: 9, username: 'anggota3', password: 'anggota123', nama: 'Citra Dewi', role: 'anggota', nro: 'ANG-003', kelas: 'X-3', noHp: '081234567898', foto: '' },
+                { id: 10, username: 'anggota4', password: 'anggota123', nama: 'Doni Saputra', role: 'anggota', nro: 'ANG-004', kelas: 'XI-3', noHp: '081234567899', foto: '' },
+            ],
+            arsip: [
+                { id: 1, judul: 'Rapat OSIS 2025', tanggal: '2025-10-01', kategori: 'Notulensi Rapat', deskripsi: 'Rapat awal periode 2025/2026', link: 'https://docs.google.com/document/d/123' },
+                { id: 2, judul: 'Proposal Pentas Seni', tanggal: '2025-10-15', kategori: 'Proposal', deskripsi: 'Proposal kegiatan pentas seni tahunan', link: 'https://docs.google.com/document/d/456' },
+                { id: 3, judul: 'LPJ Kegiatan 2024', tanggal: '2025-09-30', kategori: 'LPJ', deskripsi: 'Laporan pertanggungjawaban kegiatan 2024', link: 'https://docs.google.com/document/d/789' },
+                { id: 4, judul: 'Surat Edaran OSIS', tanggal: '2025-10-20', kategori: 'Surat', deskripsi: 'Surat edaran tentang kegiatan OSIS', link: 'https://docs.google.com/document/d/012' },
+            ],
+            notulensi: [
+                { id: 1, judulRapat: 'Rapat Persiapan Pentas Seni', tanggal: '2025-10-01', tempat: 'Ruang OSIS', pimpinan: 'Ahmad Fauzi', notulis: 'Budi Santoso', isi: 'Membahas persiapan pentas seni yang akan dilaksanakan pada bulan Desember 2025. Menentukan panitia dan anggaran.' },
+                { id: 2, judulRapat: 'Evaluasi Kegiatan OSIS', tanggal: '2025-10-20', tempat: 'Ruang Guru', pimpinan: 'Ahmad Fauzi', notulis: 'Budi Santoso', isi: 'Evaluasi seluruh kegiatan OSIS periode September-Oktober 2025. Membahas kendala dan solusi.' },
+                { id: 3, judulRapat: 'Rapat Anggaran', tanggal: '2025-11-05', tempat: 'Ruang OSIS', pimpinan: 'Siti Rahma', notulis: 'Dewi Lestari', isi: 'Membahas anggaran untuk kegiatan bulan November 2025 dan persiapan bulan Desember.' },
+            ],
+            transaksi: [
+                { id: 1, tanggal: '2025-10-01', keterangan: 'Kas Awal Periode', jenis: 'masuk', nominal: 5000000 },
+                { id: 2, tanggal: '2025-10-05', keterangan: 'Iuran Anggota Oktober', jenis: 'masuk', nominal: 500000 },
+                { id: 3, tanggal: '2025-10-10', keterangan: 'Pembelian Perlengkapan', jenis: 'keluar', nominal: 750000 },
+                { id: 4, tanggal: '2025-10-15', keterangan: 'Dana Kegiatan Pentas Seni', jenis: 'keluar', nominal: 1000000 },
+                { id: 5, tanggal: '2025-10-20', keterangan: 'Iuran Anggota Tambahan', jenis: 'masuk', nominal: 250000 },
+                { id: 6, tanggal: '2025-11-01', keterangan: 'Kas November', jenis: 'masuk', nominal: 3000000 },
+                { id: 7, tanggal: '2025-11-10', keterangan: 'Pembelian ATK', jenis: 'keluar', nominal: 250000 },
+                { id: 8, tanggal: '2025-11-15', keterangan: 'Dana Kegiatan', jenis: 'keluar', nominal: 500000 },
+                { id: 9, tanggal: '2025-12-01', keterangan: 'Kas Desember', jenis: 'masuk', nominal: 2000000 },
+                { id: 10, tanggal: '2025-12-05', keterangan: 'Iuran Anggota Desember', jenis: 'masuk', nominal: 750000 },
+                { id: 11, tanggal: '2026-01-05', keterangan: 'Kas Januari', jenis: 'masuk', nominal: 2500000 },
+                { id: 12, tanggal: '2026-01-15', keterangan: 'Pembelian Hadiah', jenis: 'keluar', nominal: 300000 },
+            ],
+            pengumuman: [
+                { id: 1, judul: 'Persiapan Pentas Seni', isi: 'Diumumkan kepada seluruh anggota OSIS untuk mempersiapkan diri dalam kegiatan pentas seni yang akan dilaksanakan pada tanggal 15 Desember 2025.', tanggal: '2025-10-15', penulis: 'Ahmad Fauzi' },
+                { id: 2, judul: 'Pendaftaran Anggota Baru', isi: 'Dibuka pendaftaran anggota baru OSIS untuk periode 2025/2026. Silakan mendaftar ke sekretaris.', tanggal: '2025-10-25', penulis: 'Budi Santoso' },
+                { id: 3, judul: 'Rapat Rutin Bulanan', isi: 'Rapat rutin OSIS akan dilaksanakan pada tanggal 5 November 2025 pukul 14.00 di Ruang OSIS. Kehadiran wajib bagi seluruh pengurus.', tanggal: '2025-10-30', penulis: 'Siti Rahma' },
+            ],
+            suratPeringatan: [
+                { id: 1, userId: 7, tanggal: '2025-10-01', level: 'SP1', alasan: 'Tidak hadir rapat tanpa keterangan', pemberi: 'Ahmad Fauzi', status: 'dibaca' },
+                { id: 2, userId: 8, tanggal: '2025-10-15', level: 'SP1', alasan: 'Terlambat mengumpulkan tugas', pemberi: 'Budi Santoso', status: 'belum_dibaca' },
+                { id: 3, userId: 9, tanggal: '2025-11-01', level: 'SP2', alasan: 'Melanggar tata tertib organisasi', pemberi: 'Rudi Hartono', status: 'dibaca' },
+            ],
+            kehadiran: [
+                { id: 1, userId: 2, tanggal: '2025-10-01', status: 'hadir' },
+                { id: 2, userId: 2, tanggal: '2025-10-15', status: 'hadir' },
+                { id: 3, userId: 2, tanggal: '2025-10-20', status: 'sakit' },
+                { id: 4, userId: 3, tanggal: '2025-10-01', status: 'hadir' },
+                { id: 5, userId: 3, tanggal: '2025-10-15', status: 'hadir' },
+                { id: 6, userId: 3, tanggal: '2025-10-20', status: 'hadir' },
+                { id: 7, userId: 4, tanggal: '2025-10-01', status: 'hadir' },
+                { id: 8, userId: 4, tanggal: '2025-10-15', status: 'izin' },
+                { id: 9, userId: 4, tanggal: '2025-10-20', status: 'hadir' },
+                { id: 10, userId: 7, tanggal: '2025-10-01', status: 'hadir' },
+                { id: 11, userId: 7, tanggal: '2025-10-15', status: 'hadir' },
+                { id: 12, userId: 7, tanggal: '2025-10-20', status: 'hadir' },
+            ]
+        };
+
+        // ============================================================
+        // STORAGE MANAGER
+        // ============================================================
+
+        class StorageManager {
+            static get(key, defaultValue = null) {
+                try {
+                    const data = localStorage.getItem(`simosis_${key}`);
+                    return data ? JSON.parse(data) : defaultValue;
+                } catch (e) {
+                    return defaultValue;
+                }
+            }
+
+            static set(key, value) {
+                try {
+                    localStorage.setItem(`simosis_${key}`, JSON.stringify(value));
+                } catch (e) {
+                    console.error('Storage error:', e);
+                }
+            }
+
+            static init() {
+                const collections = ['users', 'arsip', 'notulensi', 'transaksi', 'pengumuman', 'suratPeringatan', 'kehadiran', 'session'];
+                let needsInit = false;
+                
+                collections.forEach(key => {
+                    if (this.get(key) === null) {
+                        needsInit = true;
+                    }
+                });
+
+                if (needsInit) {
+                    Object.keys(INITIAL_DATA).forEach(key => {
+                        this.set(key, INITIAL_DATA[key]);
+                    });
+                    console.log('✅ Initial data loaded');
+                }
+            }
+
+            static getUsers() { return this.get('users', []); }
+            static setUsers(data) { this.set('users', data); }
+            
+            static getArsip() { return this.get('arsip', []); }
+            static setArsip(data) { this.set('arsip', data); }
+            
+            static getNotulensi() { return this.get('notulensi', []); }
+            static setNotulensi(data) { this.set('notulensi', data); }
+            
+            static getTransaksi() { return this.get('transaksi', []); }
+            static setTransaksi(data) { this.set('transaksi', data); }
+            
+            static getPengumuman() { return this.get('pengumuman', []); }
+            static setPengumuman(data) { this.set('pengumuman', data); }
+            
+            static getSuratPeringatan() { return this.get('suratPeringatan', []); }
+            static setSuratPeringatan(data) { this.set('suratPeringatan', data); }
+            
+            static getKehadiran() { return this.get('kehadiran', []); }
+            static setKehadiran(data) { this.set('kehadiran', data); }
+            
+            static getSession() { return this.get('session', null); }
+            static setSession(data) { this.set('session', data); }
+            static clearSession() { this.set('session', null); }
+        }
+
+        // ============================================================
+        // AUTH SYSTEM
+        // ============================================================
+
+        class AuthManager {
+            static currentUser = null;
+
+            static login(username, password) {
+                const users = StorageManager.getUsers();
+                const user = users.find(u => u.username === username && u.password === password);
+                
+                if (user) {
+                    this.currentUser = user;
+                    StorageManager.setSession({ userId: user.id, loginTime: new Date().toISOString() });
+                    return user;
+                }
+                return null;
+            }
+
+            static logout() {
+                this.currentUser = null;
+                StorageManager.clearSession();
+            }
+
+            static getCurrentUser() {
+                if (this.currentUser) return this.currentUser;
+                
+                const session = StorageManager.getSession();
+                if (session) {
+                    const users = StorageManager.getUsers();
+                    const user = users.find(u => u.id === session.userId);
+                    if (user) {
+                        this.currentUser = user;
+                        return user;
+                    }
+                }
+                return null;
+            }
+
+            static isLoggedIn() {
+                return this.getCurrentUser() !== null;
+            }
+
+            static hasRole(roles) {
+                const user = this.getCurrentUser();
+                if (!user) return false;
+                return roles.includes(user.role);
+            }
+        }
+
+        // ============================================================
+        // ROLE PERMISSIONS
+        // ============================================================
+
+        const ROLE_PERMISSIONS = {
+            admin: {
+                canManageAnggota: true,
+                canManageArsip: true,
+                canManageNotulensi: true,
+                canManageKeuangan: true,
+                canManageSurat: true,
+                canManagePengumuman: true,
+                canViewAll: true,
+                menu: ['dashboard', 'anggota', 'arsip', 'notulensi', 'keuangan', 'surat', 'pengumuman']
+            },
+            ketua: {
+                canManageAnggota: true,
+                canManageArsip: false,
+                canManageNotulensi: false,
+                canManageKeuangan: true,
+                canManageSurat: true,
+                canManagePengumuman: true,
+                canViewAll: true,
+                menu: ['dashboard', 'anggota', 'arsip', 'notulensi', 'keuangan', 'surat', 'pengumuman']
+            },
+            wakil_ketua: {
+                canManageAnggota: true,
+                canManageArsip: false,
+                canManageNotulensi: false,
+                canManageKeuangan: true,
+                canManageSurat: true,
+                canManagePengumuman: true,
+                canViewAll: true,
+                menu: ['dashboard', 'anggota', 'arsip', 'notulensi', 'keuangan', 'surat', 'pengumuman']
+            },
+            sekretaris: {
+                canManageAnggota: true,
+                canManageArsip: true,
+                canManageNotulensi: true,
+                canManageKeuangan: true,
+                canManageSurat: false,
+                canManagePengumuman: true,
+                canViewAll: true,
+                menu: ['dashboard', 'anggota', 'arsip', 'notulensi', 'keuangan', 'pengumuman']
+            },
+            bendahara: {
+                canManageAnggota: false,
+                canManageArsip: false,
+                canManageNotulensi: false,
+                canManageKeuangan: true,
+                canManageSurat: false,
+                canManagePengumuman: false,
+                canViewAll: false,
+                menu: ['dashboard', 'keuangan']
+            },
+            pengawas: {
+                canManageAnggota: false,
+                canManageArsip: false,
+                canManageNotulensi: false,
+                canManageKeuangan: false,
+                canManageSurat: true,
+                canManagePengumuman: false,
+                canViewAll: false,
+                menu: ['dashboard', 'surat']
+            },
+            anggota: {
+                canManageAnggota: false,
+                canManageArsip: false,
+                canManageNotulensi: false,
+                canManageKeuangan: false,
+                canManageSurat: false,
+                canManagePengumuman: false,
+                canViewAll: false,
+                menu: ['dashboard', 'arsip', 'notulensi', 'pengumuman']
+            }
+        };
+
+        // ============================================================
+        // MAIN APPLICATION
+        // ============================================================
+
+        const App = {
+            currentPage: 'dashboard',
+            chartInstances: {},
+            modalInstance: null,
+            detailModalInstance: null,
+
+            init() {
+                StorageManager.init();
+                this.modalInstance = new bootstrap.Modal(document.getElementById('formModal'));
+                this.detailModalInstance = new bootstrap.Modal(document.getElementById('detailModal'));
+                
+                // Check session
+                if (AuthManager.isLoggedIn()) {
+                    this.showApp();
+                } else {
+                    this.showLogin();
+                }
+                
+                // Event listeners for login
+                document.getElementById('loginUsername').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') handleLogin();
+                });
+                document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') handleLogin();
+                });
+            },
+
+            showLogin() {
+                document.getElementById('loginPage').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('d-none');
+            },
+
+            showApp() {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('d-none');
+                this.updateUserInfo();
+                this.renderSidebar();
+                this.navigateTo('dashboard');
+                UIHelper.hideLoading();
+            },
+          
+            updateUserInfo() {
+                const user = AuthManager.getCurrentUser();
+                if (!user) return;
+                
+                document.getElementById('sidebarUserName').textContent = user.nama;
+                document.getElementById('sidebarUserRole').textContent = this.getRoleLabel(user.role);
+                document.getElementById('topBarUser').textContent = user.nama;
+            },
+
+            getRoleLabel(role) {
+                const labels = {
+                    admin: 'Admin',
+                    ketua: 'Ketua',
+                    wakil_ketua: 'Wakil Ketua',
+                    sekretaris: 'Sekretaris',
+                    bendahara: 'Bendahara',
+                    pengawas: 'Badan Pengawas',
+                    anggota: 'Anggota'
+                };
+                return labels[role] || role;
+            },
+
+            renderSidebar() {
+                const user = AuthManager.getCurrentUser();
+                if (!user) return;
+                
+                const permissions = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.anggota;
+                const menuItems = {
+                    dashboard: { icon: 'fa-chart-pie', label: 'Dashboard' },
+                    anggota: { icon: 'fa-users', label: 'Data Anggota' },
+                    arsip: { icon: 'fa-archive', label: 'Arsip Organisasi' },
+                    notulensi: { icon: 'fa-file-alt', label: 'Notulensi Rapat' },
+                    keuangan: { icon: 'fa-wallet', label: 'Keuangan' },
+                    surat: { icon: 'fa-envelope', label: 'Surat Peringatan' },
+                    pengumuman: { icon: 'fa-bullhorn', label: 'Pengumuman' }
+                };
+                
+                let html = '';
+                permissions.menu.forEach(key => {
+                    const item = menuItems[key];
+                    if (item) {
+                        html += `
+                            <li class="nav-item ${this.currentPage === key ? 'active' : ''}">
+                                <a class="nav-link" href="#" onclick="App.navigateTo('${key}')">
+                                    <i class="fas ${item.icon}"></i>
+                                    ${item.label}
+                                </a>
+                            </li>
+                        `;
+                    }
+                });
+                
+                document.getElementById('sidebarMenu').innerHTML = html;
+            },
+
+            navigateTo(page) {
+                this.currentPage = page;
+                this.renderSidebar();
+                this.renderPage(page);
+            },
+
+            renderPage(page) {
+                const content = document.getElementById('contentArea');
+                switch(page) {
+                    case 'dashboard':
+                        this.renderDashboard(content);
+                        break;
+                    case 'anggota':
+                        this.renderAnggota(content);
+                        break;
+                    case 'arsip':
+                        this.renderArsip(content);
+                        break;
+                    case 'notulensi':
+                        this.renderNotulensi(content);
+                        break;
+                    case 'keuangan':
+                        this.renderKeuangan(content);
+                        break;
+                    case 'surat':
+                        this.renderSurat(content);
+                        break;
+                    case 'pengumuman':
+                        this.renderPengumuman(content);
+                        break;
+                    default:
+                        content.innerHTML = '<h1>Halaman tidak ditemukan</h1>';
+                }
+            },
+
+            // ============================================================
+            // DASHBOARD
+            // ============================================================
+
+            renderDashboard(container) {
+                const user = AuthManager.getCurrentUser();
+                const users = StorageManager.getUsers();
+                const arsip = StorageManager.getArsip();
+                const notulensi = StorageManager.getNotulensi();
+                const transaksi = StorageManager.getTransaksi();
+                const surat = StorageManager.getSuratPeringatan();
+                const kehadiran = StorageManager.getKehadiran();
+                
+                // Count stats
+                const totalAnggota = users.length;
+                const totalArsip = arsip.length;
+                const totalNotulensi = notulensi.length;
+                const totalKasMasuk = transaksi.filter(t => t.jenis === 'masuk').reduce((sum, t) => sum + t.nominal, 0);
+                const totalKasKeluar = transaksi.filter(t => t.jenis === 'keluar').reduce((sum, t) => sum + t.nominal, 0);
+                
+                // Surat untuk user ini
+                const suratUser = surat.filter(s => s.userId === user.id);
+                const kehadiranUser = kehadiran.filter(k => k.userId === user.id);
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <h4 class="mb-4">Dashboard</h4>
+                        
+                        <!-- Stats Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <div class="stat-card text-center">
+                                    <div class="stat-icon bg-primary bg-opacity-10 text-primary mx-auto">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                    <p class="stat-number" id="statAnggota">0</p>
+                                    <p class="stat-label">Anggota</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <div class="stat-card text-center">
+                                    <div class="stat-icon bg-info bg-opacity-10 text-info mx-auto">
+                                        <i class="fas fa-archive"></i>
+                                    </div>
+                                    <p class="stat-number" id="statArsip">0</p>
+                                    <p class="stat-label">Arsip</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <div class="stat-card text-center">
+                                    <div class="stat-icon bg-warning bg-opacity-10 text-warning mx-auto">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <p class="stat-number" id="statNotulensi">0</p>
+                                    <p class="stat-label">Notulensi</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-6">
+                                <div class="stat-card text-center">
+                                    <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto">
+                                        <i class="fas fa-arrow-down"></i>
+                                    </div>
+                                    <p class="stat-number" id="statKasMasuk">Rp 0</p>
+                                    <p class="stat-label">Kas Masuk</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-6">
+                                <div class="stat-card text-center">
+                                    <div class="stat-icon bg-danger bg-opacity-10 text-danger mx-auto">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </div>
+                                    <p class="stat-number" id="statKasKeluar">Rp 0</p>
+                                    <p class="stat-label">Kas Keluar</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Charts Row -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h6 class="mb-3">Grafik Keuangan</h6>
+                                    <canvas id="keuanganChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h6 class="mb-3">Distribusi Anggota</h6>
+                                    <canvas id="anggotaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Personal Info -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>Profil Saya</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img src="${user.foto || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%232563eb\'/%3E%3Ctext x=\'50\' y=\'55\' font-size=\'40\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'%3E👤%3C/text%3E%3C/svg%3E'}" class="profile-photo" style="width:80px;height:80px;">
+                                            <div>
+                                                <h5 class="mb-1">${user.nama}</h5>
+                                                <p class="mb-0 text-muted"><span class="badge bg-primary">${this.getRoleLabel(user.role)}</span></p>
+                                                <p class="mb-0 text-muted small">NRO: ${user.nro}</p>
+                                                <p class="mb-0 text-muted small">Kelas: ${user.kelas}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Surat Peringatan</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        ${suratUser.length === 0 ? 
+                                            '<p class="text-muted mb-0">Tidak ada surat peringatan</p>' :
+                                            suratUser.map(s => `
+                                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                                    <div>
+                                                        <span class="badge bg-${s.level === 'SP3' ? 'danger' : s.level === 'SP2' ? 'warning' : 'info'}">${s.level}</span>
+                                                        <small class="text-muted ms-2">${s.tanggal}</small>
+                                                        <p class="mb-0 small">${s.alasan}</p>
+                                                    </div>
+                                                    <span class="badge bg-${s.status === 'dibaca' ? 'success' : 'warning'}">${s.status}</span>
+                                                </div>
+                                            `).join('')
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Animate counters
+                this.animateCounter('statAnggota', totalAnggota);
+                this.animateCounter('statArsip', totalArsip);
+                this.animateCounter('statNotulensi', totalNotulensi);
+                this.animateCounter('statKasMasuk', totalKasMasuk, true);
+                this.animateCounter('statKasKeluar', totalKasKeluar, true);
+                
+                // Charts
+                this.renderKeuanganChart(transaksi);
+                this.renderAnggotaChart(users);
+            },
+
+            animateCounter(elementId, target, isCurrency = false) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                
+                let current = 0;
+                const duration = 1000;
+                const steps = 30;
+                const increment = target / steps;
+                const stepTime = duration / steps;
+                
+                const formatter = isCurrency ? 
+                    (val) => 'Rp ' + Math.round(val).toLocaleString('id-ID') :
+                    (val) => Math.round(val).toString();
+                
+                const interval = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(interval);
+                    }
+                    el.textContent = formatter(current);
+                }, stepTime);
+            },
+
+            renderKeuanganChart(transaksi) {
+                const ctx = document.getElementById('keuanganChart');
+                if (!ctx) return;
+                
+                if (this.chartInstances.keuangan) {
+                    this.chartInstances.keuangan.destroy();
+                }
+                
+                const bulan = ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
+                const bulanData = {};
+                
+                transaksi.forEach(t => {
+                    const date = new Date(t.tanggal);
+                    const key = date.getMonth();
+                    if (!bulanData[key]) bulanData[key] = { masuk: 0, keluar: 0 };
+                    if (t.jenis === 'masuk') bulanData[key].masuk += t.nominal;
+                    else bulanData[key].keluar += t.nominal;
+                });
+                
+                const labels = [];
+                const masuk = [];
+                const keluar = [];
+                
+                // Months 9-14 (Oct 2025 - Jun 2026)
+                for (let i = 9; i <= 14; i++) {
+                    const monthIndex = i % 12;
+                    labels.push(bulan[monthIndex]);
+                    masuk.push(bulanData[monthIndex]?.masuk || 0);
+                    keluar.push(bulanData[monthIndex]?.keluar || 0);
+                }
+                
+                this.chartInstances.keuangan = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Pemasukan',
+                                data: masuk,
+                                backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                                borderColor: '#22c55e',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Pengeluaran',
+                                data: keluar,
+                                backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                                borderColor: '#ef4444',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => 'Rp ' + value.toLocaleString('id-ID')
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            renderAnggotaChart(users) {
+                const ctx = document.getElementById('anggotaChart');
+                if (!ctx) return;
+                
+                if (this.chartInstances.anggota) {
+                    this.chartInstances.anggota.destroy();
+                }
+                
+                const roles = ['admin', 'ketua', 'wakil_ketua', 'sekretaris', 'bendahara', 'pengawas', 'anggota'];
+                const labels = ['Admin', 'Ketua', 'Wakil', 'Sekretaris', 'Bendahara', 'Pengawas', 'Anggota'];
+                const data = roles.map(r => users.filter(u => u.role === r).length);
+                const colors = ['#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#22c55e', '#ec4899', '#3b82f6'];
+                
+                this.chartInstances.anggota = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.map(c => c + '80'),
+                            borderColor: colors,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+            },
+            // ============================================================
+            // ANGGOTA
+            // ============================================================
+
+            renderAnggota(container) {
+                const user = AuthManager.getCurrentUser();
+                const users = StorageManager.getUsers();
+                const canManage = ['admin', 'ketua', 'wakil_ketua', 'sekretaris'].includes(user.role);
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Data Anggota</h4>
+                            <div>
+                                ${canManage ? `<button class="btn btn-primary" onclick="App.showAnggotaForm()">
+                                    <i class="fas fa-plus me-2"></i>Tambah Anggota
+                                </button>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchAnggota" placeholder="Cari anggota..." oninput="App.filterAnggota()">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filterRoleAnggota" onchange="App.filterAnggota()">
+                                    <option value="">Semua Jabatan</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="ketua">Ketua</option>
+                                    <option value="wakil_ketua">Wakil Ketua</option>
+                                    <option value="sekretaris">Sekretaris</option>
+                                    <option value="bendahara">Bendahara</option>
+                                    <option value="pengawas">Badan Pengawas</option>
+                                    <option value="anggota">Anggota</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5 text-end">
+                                <button class="btn btn-success me-2" onclick="App.exportExcel()">
+                                    <i class="fas fa-file-excel me-1"></i>Excel
+                                </button>
+                                <button class="btn btn-danger" onclick="App.exportPDF()">
+                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-modern" id="anggotaTable">
+                                <thead>
+                                    <tr>
+                                        <th>Foto</th>
+                                        <th>Nama</th>
+                                        <th>Jabatan</th>
+                                        <th>NRO</th>
+                                        <th>Kelas</th>
+                                        <th>No HP</th>
+                                        ${canManage ? '<th>Aksi</th>' : ''}
+                                    </tr>
+                                </thead>
+                                <tbody id="anggotaTableBody">
+                                    ${this.renderAnggotaRows(users, canManage)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderAnggotaRows(users, canManage) {
+                const roleLabels = {
+                    admin: 'Admin',
+                    ketua: 'Ketua',
+                    wakil_ketua: 'Wakil Ketua',
+                    sekretaris: 'Sekretaris',
+                    bendahara: 'Bendahara',
+                    pengawas: 'Badan Pengawas',
+                    anggota: 'Anggota'
+                };
+                
+                const roleColors = {
+                    admin: 'danger',
+                    ketua: 'primary',
+                    wakil_ketua: 'info',
+                    sekretaris: 'success',
+                    bendahara: 'warning',
+                    pengawas: 'purple',
+                    anggota: 'secondary'
+                };
+                
+                return users.map(u => `
+                    <tr>
+                        <td>
+                            <img src="${u.foto || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%232563eb\'/%3E%3Ctext x=\'50\' y=\'55\' font-size=\'40\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial\'%3E👤%3C/text%3E%3C/svg%3E'}" class="small-profile-photo">
+                        </td>
+                        <td><strong>${u.nama}</strong></td>
+                        <td><span class="badge bg-${roleColors[u.role] || 'secondary'}">${roleLabels[u.role] || u.role}</span></td>
+                        <td>${u.nro}</td>
+                        <td>${u.kelas}</td>
+                        <td>${u.noHp}</td>
+                        ${canManage ? `
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="App.showAnggotaForm(${u.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="App.deleteAnggota(${u.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `).join('');
+            },
+
+            filterAnggota() {
+                const search = document.getElementById('searchAnggota')?.value?.toLowerCase() || '';
+                const filterRole = document.getElementById('filterRoleAnggota')?.value || '';
+                const users = StorageManager.getUsers();
+                const user = AuthManager.getCurrentUser();
+                const canManage = ['admin', 'ketua', 'wakil_ketua', 'sekretaris'].includes(user.role);
+                
+                const filtered = users.filter(u => {
+                    const matchSearch = u.nama.toLowerCase().includes(search) || u.nro.toLowerCase().includes(search);
+                    const matchRole = filterRole === '' || u.role === filterRole;
+                    return matchSearch && matchRole;
+                });
+                
+                document.getElementById('anggotaTableBody').innerHTML = this.renderAnggotaRows(filtered, canManage);
+            },
+
+            showAnggotaForm(id = null) {
+                const users = StorageManager.getUsers();
+                const user = id ? users.find(u => u.id === id) : null;
+                const isEdit = !!user;
+                
+                const modal = document.getElementById('formModal');
+                document.getElementById('formModalTitle').textContent = isEdit ? 'Edit Anggota' : 'Tambah Anggota';
+                
+                const formBody = document.getElementById('formModalBody');
+                formBody.innerHTML = `
+                    <form id="anggotaForm">
+                        <input type="hidden" id="anggotaId" value="${id || ''}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nama Lengkap</label>
+                                <input type="text" class="form-control" id="fNama" value="${user?.nama || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" id="fUsername" value="${user?.username || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" id="fPassword" placeholder="${isEdit ? 'Kosongkan jika tidak diubah' : 'Password baru'}" ${isEdit ? '' : 'required'}>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Jabatan</label>
+                                <select class="form-select" id="fRole">
+                                    <option value="admin" ${user?.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                    <option value="ketua" ${user?.role === 'ketua' ? 'selected' : ''}>Ketua</option>
+                                    <option value="wakil_ketua" ${user?.role === 'wakil_ketua' ? 'selected' : ''}>Wakil Ketua</option>
+                                    <option value="sekretaris" ${user?.role === 'sekretaris' ? 'selected' : ''}>Sekretaris</option>
+                                    <option value="bendahara" ${user?.role === 'bendahara' ? 'selected' : ''}>Bendahara</option>
+                                    <option value="pengawas" ${user?.role === 'pengawas' ? 'selected' : ''}>Badan Pengawas</option>
+                                    <option value="anggota" ${user?.role === 'anggota' ? 'selected' : ''}>Anggota</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">NRO</label>
+                                <input type="text" class="form-control" id="fNro" value="${user?.nro || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kelas</label>
+                                <input type="text" class="form-control" id="fKelas" value="${user?.kelas || ''}" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Nomor HP</label>
+                                <input type="text" class="form-control" id="fNoHp" value="${user?.noHp || ''}">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Foto Profil (URL)</label>
+                                <input type="text" class="form-control" id="fFoto" value="${user?.foto || ''}" placeholder="Masukkan URL foto">
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                this.modalInstance.show();
+                
+                document.getElementById('anggotaForm').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.saveAnggota(id);
+                };
+            },
+
+            saveAnggota(id) {
+                const users = StorageManager.getUsers();
+                const data = {
+                    nama: document.getElementById('fNama').value,
+                    username: document.getElementById('fUsername').value,
+                    password: document.getElementById('fPassword').value,
+                    role: document.getElementById('fRole').value,
+                    nro: document.getElementById('fNro').value,
+                    kelas: document.getElementById('fKelas').value,
+                    noHp: document.getElementById('fNoHp').value,
+                    foto: document.getElementById('fFoto').value || ''
+                };
+                
+                if (!data.nama || !data.username || !data.nro || !data.kelas) {
+                    UIHelper.showToast('Mohon isi semua field yang diperlukan!', 'error');
+                    return;
+                }
+                
+                if (id) {
+                    // Edit
+                    const index = users.findIndex(u => u.id === id);
+                    if (index !== -1) {
+                        users[index] = { ...users[index], ...data };
+                        if (!data.password) {
+                            delete users[index].password;
+                            users[index].password = users[index].password || 'password123';
+                        }
+                        StorageManager.setUsers(users);
+                        UIHelper.showToast('Anggota berhasil diupdate!');
+                    }
+                } else {
+                    // Tambah
+                    if (!data.password) {
+                        UIHelper.showToast('Password wajib diisi!', 'error');
+                        return;
+                    }
+                    const newUser = {
+                        ...data,
+                        id: Math.max(0, ...users.map(u => u.id)) + 1
+                    };
+                    users.push(newUser);
+                    StorageManager.setUsers(users);
+                    UIHelper.showToast('Anggota berhasil ditambahkan!');
+                } 
+     
+                this.modalInstance.hide();
+                this.navigateTo('anggota');
+            },
+
+            deleteAnggota(id) {
+                if (!confirm('Yakin ingin menghapus anggota ini?')) return;
+                
+                let users = StorageManager.getUsers();
+                users = users.filter(u => u.id !== id);
+                StorageManager.setUsers(users);
+                UIHelper.showToast('Anggota berhasil dihapus!');
+                this.navigateTo('anggota');
+            },
+
+            // ============================================================
+            // ARSIP
+            // ============================================================
+
+            renderArsip(container) {
+                const user = AuthManager.getCurrentUser();
+                const arsip = StorageManager.getArsip();
+                const canEdit = ['admin', 'sekretaris'].includes(user.role);
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Arsip Organisasi</h4>
+                            ${canEdit ? `<button class="btn btn-primary" onclick="App.showArsipForm()">
+                                <i class="fas fa-plus me-2"></i>Tambah Arsip
+                            </button>` : ''}
+                        </div>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchArsip" placeholder="Cari arsip..." oninput="App.filterArsip()">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filterKategoriArsip" onchange="App.filterArsip()">
+                                    <option value="">Semua Kategori</option>
+                                    <option value="Notulensi Rapat">Notulensi Rapat</option>
+                                    <option value="Proposal">Proposal</option>
+                                    <option value="LPJ">LPJ</option>
+                                    <option value="Surat">Surat</option>
+                                    <option value="Dokumen lainnya">Dokumen Lainnya</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-modern" id="arsipTable">
+                                <thead>
+                                    <tr>
+                                        <th>Judul</th>
+                                        <th>Tanggal</th>
+                                        <th>Kategori</th>
+                                        <th>Deskripsi</th>
+                                        <th>Aksi</th>
+                                        ${canEdit ? '<th>Kelola</th>' : ''}
+                                    </tr>
+                                </thead>
+                                <tbody id="arsipTableBody">
+                                    ${this.renderArsipRows(arsip, canEdit)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderArsipRows(arsip, canEdit) {
+                return arsip.map(a => `
+                    <tr>
+                        <td><strong>${a.judul}</strong></td>
+                        <td>${this.formatDate(a.tanggal)}</td>
+                        <td><span class="badge bg-info">${a.kategori}</span></td>
+                        <td>${a.deskripsi}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="App.bukaArsip('${a.link}')">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="App.copyLink('${a.link}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="App.downloadArsip('${a.link}')">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </td>
+                        ${canEdit ? `
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="App.showArsipForm(${a.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="App.deleteArsip(${a.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `).join('');
+            },
+
+            filterArsip() {
+                const search = document.getElementById('searchArsip')?.value?.toLowerCase() || '';
+                const kategori = document.getElementById('filterKategoriArsip')?.value || '';
+                const arsip = StorageManager.getArsip();
+                const user = AuthManager.getCurrentUser();
+                const canEdit = ['admin', 'sekretaris'].includes(user.role);
+                
+                const filtered = arsip.filter(a => {
+                    const matchSearch = a.judul.toLowerCase().includes(search) || a.deskripsi.toLowerCase().includes(search);
+                    const matchKategori = kategori === '' || a.kategori === kategori;
+                    return matchSearch && matchKategori;
+                });
+                
+                document.getElementById('arsipTableBody').innerHTML = this.renderArsipRows(filtered, canEdit);
+            },
+
+            showArsipForm(id = null) {
+                const arsip = StorageManager.getArsip();
+                const data = id ? arsip.find(a => a.id === id) : null;
+                const isEdit = !!data;
+                
+                const modal = document.getElementById('formModal');
+                document.getElementById('formModalTitle').textContent = isEdit ? 'Edit Arsip' : 'Tambah Arsip';
+                
+                const formBody = document.getElementById('formModalBody');
+                formBody.innerHTML = `
+                    <form id="arsipForm">
+                        <input type="hidden" id="arsipId" value="${id || ''}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Judul</label>
+                                <input type="text" class="form-control" id="aJudul" value="${data?.judul || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="aTanggal" value="${data?.tanggal || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kategori</label>
+                                <select class="form-select" id="aKategori">
+                                    <option value="Notulensi Rapat" ${data?.kategori === 'Notulensi Rapat' ? 'selected' : ''}>Notulensi Rapat</option>
+                                    <option value="Proposal" ${data?.kategori === 'Proposal' ? 'selected' : ''}>Proposal</option>
+                                    <option value="LPJ" ${data?.kategori === 'LPJ' ? 'selected' : ''}>LPJ</option>
+                                    <option value="Surat" ${data?.kategori === 'Surat' ? 'selected' : ''}>Surat</option>
+                                    <option value="Dokumen lainnya" ${data?.kategori === 'Dokumen lainnya' ? 'selected' : ''}>Dokumen Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Link Dokumen</label>
+                                <input type="url" class="form-control" id="aLink" value="${data?.link || ''}" placeholder="https://..." required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Deskripsi</label>
+                                <textarea class="form-control" id="aDeskripsi" rows="3">${data?.deskripsi || ''}</textarea>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                this.modalInstance.show();
+              
+                document.getElementById('arsipForm').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.saveArsip(id);
+                };
+            },
+
+            saveArsip(id) {
+                const arsip = StorageManager.getArsip();
+                const data = {
+                    judul: document.getElementById('aJudul').value,
+                    tanggal: document.getElementById('aTanggal').value,
+                    kategori: document.getElementById('aKategori').value,
+                    link: document.getElementById('aLink').value,
+                    deskripsi: document.getElementById('aDeskripsi').value
+                };
+                
+                if (!data.judul || !data.tanggal || !data.link) {
+                    UIHelper.showToast('Mohon isi semua field yang diperlukan!', 'error');
+                    return;
+                }
+                
+                if (id) {
+                    const index = arsip.findIndex(a => a.id === id);
+                    if (index !== -1) {
+                        arsip[index] = { ...arsip[index], ...data };
+                        StorageManager.setArsip(arsip);
+                        UIHelper.showToast('Arsip berhasil diupdate!');
+                    }
+                } else {
+                    const newArsip = {
+                        ...data,
+                        id: Math.max(0, ...arsip.map(a => a.id)) + 1
+                    };
+                    arsip.push(newArsip);
+                    StorageManager.setArsip(arsip);
+                    UIHelper.showToast('Arsip berhasil ditambahkan!');
+                }
+                
+                this.modalInstance.hide();
+                this.navigateTo('arsip');
+            },
+
+            deleteArsip(id) {
+                if (!confirm('Yakin ingin menghapus arsip ini?')) return;
+                
+                let arsip = StorageManager.getArsip();
+                arsip = arsip.filter(a => a.id !== id);
+                StorageManager.setArsip(arsip);
+                UIHelper.showToast('Arsip berhasil dihapus!');
+                this.navigateTo('arsip');
+            },
+
+            bukaArsip(link) {
+                window.open(link, '_blank');
+            },
+
+            copyLink(link) {
+                navigator.clipboard.writeText(link).then(() => {
+                    UIHelper.showToast('Link berhasil disalin!');
+                }).catch(() => {
+                    // Fallback
+                    const input = document.createElement('input');
+                    input.value = link;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    UIHelper.showToast('Link berhasil disalin!');
+                });
+            },
+
+            downloadArsip(link) {
+                // Simulate download
+                UIHelper.showToast('Download akan dimulai...', 'info');
+                window.open(link, '_blank');
+            },
+
+            // ============================================================
+            // NOTULENSI
+            // ============================================================
+
+            renderNotulensi(container) {
+                const user = AuthManager.getCurrentUser();
+                const notulensi = StorageManager.getNotulensi();
+                const canEdit = ['admin', 'sekretaris'].includes(user.role);
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Notulensi Rapat</h4>
+                            ${canEdit ? `<button class="btn btn-primary" onclick="App.showNotulensiForm()">
+                                <i class="fas fa-plus me-2"></i>Tambah Notulensi
+                            </button>` : ''}
+                        </div>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" id="searchNotulensi" placeholder="Cari notulensi..." oninput="App.filterNotulensi()">
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            ${notulensi.map(n => `
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">${n.judulRapat}</h5>
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>${this.formatDate(n.tanggal)}
+                                                    <i class="fas fa-map-marker-alt ms-2 me-1"></i>${n.tempat}
+                                                </small>
+                                            </p>
+                                            <p class="card-text">
+                                                <strong>Pimpinan:</strong> ${n.pimpinan}<br>
+                                                <strong>Notulis:</strong> ${n.notulis}
+                                            </p>
+                                            <p class="card-text">${n.isi.substring(0, 100)}${n.isi.length > 100 ? '...' : ''}</p>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="App.detailNotulensi(${n.id})">
+                                                <i class="fas fa-eye me-1"></i>Detail
+                                            </button>
+                                            ${canEdit ? `
+                                                <button class="btn btn-sm btn-outline-warning ms-1" onclick="App.showNotulensiForm(${n.id})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="App.deleteNotulensi(${n.id})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${notulensi.length === 0 ? '<p class="text-center text-muted">Belum ada notulensi</p>' : ''}
+                    </div>
+                `;
+            },
+
+            detailNotulensi(id) {
+                const notulensi = StorageManager.getNotulensi();
+                const data = notulensi.find(n => n.id === id);
+                if (!data) return;
+                
+                const modal = document.getElementById('detailModal');
+                document.getElementById('detailModalTitle').textContent = 'Detail Notulensi Rapat';
+                
+                document.getElementById('detailModalBody').innerHTML = `
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>${data.judulRapat}</h5>
+                            <hr>
+                            <p><strong>Tanggal:</strong> ${this.formatDate(data.tanggal)}</p>
+                            <p><strong>Tempat:</strong> ${data.tempat}</p>
+                            <p><strong>Pimpinan Rapat:</strong> ${data.pimpinan}</p>
+                            <p><strong>Notulis:</strong> ${data.notulis}</p>
+                            <hr>
+                            <h6>Isi Notulensi:</h6>
+                            <p>${data.isi}</p>
+                        </div>
+                    </div>
+                `;
+                
+                this.detailModalInstance.show();
+            },
+    
+            showNotulensiForm(id = null) {
+                const notulensi = StorageManager.getNotulensi();
+                const data = id ? notulensi.find(n => n.id === id) : null;
+                const isEdit = !!data;
+                
+                const modal = document.getElementById('formModal');
+                document.getElementById('formModalTitle').textContent = isEdit ? 'Edit Notulensi' : 'Tambah Notulensi';
+                
+                const formBody = document.getElementById('formModalBody');
+                formBody.innerHTML = `
+                    <form id="notulensiForm">
+                        <input type="hidden" id="notulensiId" value="${id || ''}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Judul Rapat</label>
+                                <input type="text" class="form-control" id="nJudul" value="${data?.judulRapat || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="nTanggal" value="${data?.tanggal || ''}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tempat</label>
+                                <input type="text" class="form-control" id="nTempat" value="${data?.tempat || ''}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Pimpinan Rapat</label>
+                                <input type="text" class="form-control" id="nPimpinan" value="${data?.pimpinan || ''}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Notulis</label>
+                                <input type="text" class="form-control" id="nNotulis" value="${data?.notulis || ''}" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Isi Notulensi</label>
+                                <textarea class="form-control" id="nIsi" rows="5" required>${data?.isi || ''}</textarea>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                this.modalInstance.show();
+                
+                document.getElementById('notulensiForm').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.saveNotulensi(id);
+                };
+            },
+
+            saveNotulensi(id) {
+                const notulensi = StorageManager.getNotulensi();
+                const data = {
+                    judulRapat: document.getElementById('nJudul').value,
+                    tanggal: document.getElementById('nTanggal').value,
+                    tempat: document.getElementById('nTempat').value,
+                    pimpinan: document.getElementById('nPimpinan').value,
+                    notulis: document.getElementById('nNotulis').value,
+                    isi: document.getElementById('nIsi').value
+                };
+                
+                if (!data.judulRapat || !data.tanggal || !data.isi) {
+                    UIHelper.showToast('Mohon isi semua field yang diperlukan!', 'error');
+                    return;
+                }
+                
+                if (id) {
+                    const index = notulensi.findIndex(n => n.id === id);
+                    if (index !== -1) {
+                        notulensi[index] = { ...notulensi[index], ...data };
+                        StorageManager.setNotulensi(notulensi);
+                        UIHelper.showToast('Notulensi berhasil diupdate!');
+                    }
+                } else {
+                    const newNotulensi = {
+                        ...data,
+                        id: Math.max(0, ...notulensi.map(n => n.id)) + 1
+                    };
+                    notulensi.push(newNotulensi);
+                    StorageManager.setNotulensi(notulensi);
+                    UIHelper.showToast('Notulensi berhasil ditambahkan!');
+                }
+                
+                this.modalInstance.hide();
+                this.navigateTo('notulensi');
+            },
+
+            deleteNotulensi(id) {
+                if (!confirm('Yakin ingin menghapus notulensi ini?')) return;
+                
+                let notulensi = StorageManager.getNotulensi();
+                notulensi = notulensi.filter(n => n.id !== id);
+                StorageManager.setNotulensi(notulensi);
+                UIHelper.showToast('Notulensi berhasil dihapus!');
+                this.navigateTo('notulensi');
+            },
+
+            filterNotulensi() {
+                const search = document.getElementById('searchNotulensi')?.value?.toLowerCase() || '';
+                const notulensi = StorageManager.getNotulensi();
+                const user = AuthManager.getCurrentUser();
+                const canEdit = ['admin', 'sekretaris'].includes(user.role);
+                
+                // Re-render with filter
+                const container = document.getElementById('contentArea');
+                const filtered = notulensi.filter(n => 
+                    n.judulRapat.toLowerCase().includes(search) || 
+                    n.isi.toLowerCase().includes(search)
+                );
+                
+                // Rebuild the view with filtered data
+                this.renderNotulensiWithData(container, filtered, canEdit);
+            },
+
+            renderNotulensiWithData(container, notulensi, canEdit) {
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Notulensi Rapat</h4>
+                            ${canEdit ? `<button class="btn btn-primary" onclick="App.showNotulensiForm()">
+                                <i class="fas fa-plus me-2"></i>Tambah Notulensi
+                            </button>` : ''}
+                        </div>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" id="searchNotulensi" placeholder="Cari notulensi..." oninput="App.filterNotulensi()" value="${document.getElementById('searchNotulensi')?.value || ''}">
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            ${notulensi.map(n => `
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">${n.judulRapat}</h5>
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>${this.formatDate(n.tanggal)}
+                                                    <i class="fas fa-map-marker-alt ms-2 me-1"></i>${n.tempat}
+                                                </small>
+                                            </p>
+                                            <p class="card-text">
+                                                <strong>Pimpinan:</strong> ${n.pimpinan}<br>
+                                                <strong>Notulis:</strong> ${n.notulis}
+                                            </p>
+                                            <p class="card-text">${n.isi.substring(0, 100)}${n.isi.length > 100 ? '...' : ''}</p>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="App.detailNotulensi(${n.id})">
+                                                <i class="fas fa-eye me-1"></i>Detail
+                                            </button>
+                                            ${canEdit ? `
+                                                <button class="btn btn-sm btn-outline-warning ms-1" onclick="App.showNotulensiForm(${n.id})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="App.deleteNotulensi(${n.id})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${notulensi.length === 0 ? '<p class="text-center text-muted">Tidak ada notulensi yang ditemukan</p>' : ''}
+                    </div>
+                `;
+            },
+
+            // ============================================================
+            // KEUANGAN
+            // ============================================================
+
+            renderKeuangan(container) {
+                const transaksi = StorageManager.getTransaksi();
+                const totalMasuk = transaksi.filter(t => t.jenis === 'masuk').reduce((sum, t) => sum + t.nominal, 0);
+                const totalKeluar = transaksi.filter(t => t.jenis === 'keluar').reduce((sum, t) => sum + t.nominal, 0);
+                const saldo = totalMasuk - totalKeluar;
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Keuangan OSIS</h4>
+                            <div>
+                                <button class="btn btn-success me-2" onclick="App.exportKeuanganExcel()">
+                                    <i class="fas fa-file-excel me-1"></i>Excel
+                                </button>
+                                <button class="btn btn-danger me-2" onclick="App.exportKeuanganPDF()">
+                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                </button>
+                                <button class="btn btn-primary" onclick="App.showTransaksiForm()">
+                                    <i class="fas fa-plus me-2"></i>Tambah Transaksi
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                        <i class="fas fa-arrow-down"></i>
+                                    </div>
+                                    <p class="stat-number">Rp ${totalMasuk.toLocaleString('id-ID')}</p>
+                                    <p class="stat-label">Total Pemasukan</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </div>
+                                    <p class="stat-number">Rp ${totalKeluar.toLocaleString('id-ID')}</p>
+                                    <p class="stat-label">Total Pengeluaran</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                        <i class="fas fa-wallet"></i>
+                                    </div>
+                                    <p class="stat-number" style="color: ${saldo >= 0 ? '#22c55e' : '#ef4444'}">Rp ${saldo.toLocaleString('id-ID')}</p>
+                                    <p class="stat-label">Saldo Akhir</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-info bg-opacity-10 text-info">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </div>
+                                    <p class="stat-number">${transaksi.length}</p>
+                                    <p class="stat-label">Total Transaksi</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chart -->
+                        <div class="chart-container mb-4">
+                            <h6 class="mb-3">Grafik Keuangan</h6>
+                            <canvas id="keuanganDetailChart"></canvas>
+                        </div>
+                        
+                        <!-- Filter -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchTransaksi" placeholder="Cari transaksi..." oninput="App.filterTransaksi()">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filterJenisTransaksi" onchange="App.filterTransaksi()">
+                                    <option value="">Semua Jenis</option>
+                                    <option value="masuk">Pemasukan</option>
+                                    <option value="keluar">Pengeluaran</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Transactions Table -->
+                        <div class="table-responsive">
+                            <table class="table table-modern" id="transaksiTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Keterangan</th>
+                                        <th>Jenis</th>
+                                        <th>Nominal</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transaksiTableBody">
+                                    ${this.renderTransaksiRows(transaksi)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                // Render chart
+                this.renderKeuanganDetailChart(transaksi);
+            },
+
+            renderTransaksiRows(transaksi) {
+                return transaksi.map(t => `
+                    <tr>
+                        <td>${this.formatDate(t.tanggal)}</td>
+                        <td>${t.keterangan}</td>
+                        <td>
+                            <span class="badge bg-${t.jenis === 'masuk' ? 'success' : 'danger'}">
+                                ${t.jenis === 'masuk' ? 'Pemasukan' : 'Pengeluaran'}
+                            </span>
+                        </td>
+                        <td>Rp ${t.nominal.toLocaleString('id-ID')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="App.showTransaksiForm(${t.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="App.deleteTransaksi(${t.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            filterTransaksi() {
+                const search = document.getElementById('searchTransaksi')?.value?.toLowerCase() || '';
+                const jenis = document.getElementById('filterJenisTransaksi')?.value || '';
+                const transaksi = StorageManager.getTransaksi();
+                
+                const filtered = transaksi.filter(t => {
+                    const matchSearch = t.keterangan.toLowerCase().includes(search);
+                    const matchJenis = jenis === '' || t.jenis === jenis;
+                    return matchSearch && matchJenis;
+                });
+                
+                document.getElementById('transaksiTableBody').innerHTML = this.renderTransaksiRows(filtered);
+            },
+
+            renderKeuanganDetailChart(transaksi) {
+                const ctx = document.getElementById('keuanganDetailChart');
+                if (!ctx) return;
+                
+                if (this.chartInstances.keuanganDetail) {
+                    this.chartInstances.keuanganDetail.destroy();
+                }
+                
+                const bulan = ['Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
+                const bulanData = {};
+                
+                transaksi.forEach(t => {
+                    const date = new Date(t.tanggal);
+                    const key = date.getMonth();
+                    if (!bulanData[key]) bulanData[key] = { masuk: 0, keluar: 0 };
+                    if (t.jenis === 'masuk') bulanData[key].masuk += t.nominal;
+                    else bulanData[key].keluar += t.nominal;
+                });
+                
+                const labels = [];
+                const masuk = [];
+                const keluar = [];
+              
+                for (let i = 9; i <= 14; i++) {
+                    const monthIndex = i % 12;
+                    labels.push(bulan[monthIndex]);
+                    masuk.push(bulanData[monthIndex]?.masuk || 0);
+                    keluar.push(bulanData[monthIndex]?.keluar || 0);
+                }
+                
+                this.chartInstances.keuanganDetail = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Pemasukan',
+                                data: masuk,
+                                borderColor: '#22c55e',
+                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Pengeluaran',
+                                data: keluar,
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => 'Rp ' + value.toLocaleString('id-ID')
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            showTransaksiForm(id = null) {
+                const transaksi = StorageManager.getTransaksi();
+                const data = id ? transaksi.find(t => t.id === id) : null;
+                const isEdit = !!data;
+                
+                const modal = document.getElementById('formModal');
+                document.getElementById('formModalTitle').textContent = isEdit ? 'Edit Transaksi' : 'Tambah Transaksi';
+                
+                const formBody = document.getElementById('formModalBody');
+                formBody.innerHTML = `
+                    <form id="transaksiForm">
+                        <input type="hidden" id="transaksiId" value="${id || ''}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="tTanggal" value="${data?.tanggal || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Keterangan</label>
+                                <input type="text" class="form-control" id="tKeterangan" value="${data?.keterangan || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Jenis</label>
+                                <select class="form-select" id="tJenis">
+                                    <option value="masuk" ${data?.jenis === 'masuk' ? 'selected' : ''}>Pemasukan</option>
+                                    <option value="keluar" ${data?.jenis === 'keluar' ? 'selected' : ''}>Pengeluaran</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nominal (Rp)</label>
+                                <input type="number" class="form-control" id="tNominal" value="${data?.nominal || ''}" required>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                this.modalInstance.show();
+                
+                document.getElementById('transaksiForm').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.saveTransaksi(id);
+                };
+            },
+
+            saveTransaksi(id) {
+                const transaksi = StorageManager.getTransaksi();
+                const data = {
+                    tanggal: document.getElementById('tTanggal').value,
+                    keterangan: document.getElementById('tKeterangan').value,
+                    jenis: document.getElementById('tJenis').value,
+                    nominal: parseInt(document.getElementById('tNominal').value)
+                };
+                
+                if (!data.tanggal || !data.keterangan || !data.nominal) {
+                    UIHelper.showToast('Mohon isi semua field yang diperlukan!', 'error');
+                    return;
+                }
+                
+                if (id) {
+                    const index = transaksi.findIndex(t => t.id === id);
+                    if (index !== -1) {
+                        transaksi[index] = { ...transaksi[index], ...data };
+                        StorageManager.setTransaksi(transaksi);
+                        UIHelper.showToast('Transaksi berhasil diupdate!');
+                    }
+                } else {
+                    const newTransaksi = {
+                        ...data,
+                        id: Math.max(0, ...transaksi.map(t => t.id)) + 1
+                    };
+                    transaksi.push(newTransaksi);
+                    StorageManager.setTransaksi(transaksi);
+                    UIHelper.showToast('Transaksi berhasil ditambahkan!');
+                }
+                
+                this.modalInstance.hide();
+                this.navigateTo('keuangan');
+            },
+
+            deleteTransaksi(id) {
+                if (!confirm('Yakin ingin menghapus transaksi ini?')) return;
+                
+                let transaksi = StorageManager.getTransaksi();
+                transaksi = transaksi.filter(t => t.id !== id);
+                StorageManager.setTransaksi(transaksi);
+                UIHelper.showToast('Transaksi berhasil dihapus!');
+                this.navigateTo('keuangan');
+            },
+
+            // ============================================================
+            // SURAT PERINGATAN
+            // ============================================================
+
+            renderSurat(container) {
+                const user = AuthManager.getCurrentUser();
+                const surat = StorageManager.getSuratPeringatan();
+                const users = StorageManager.getUsers();
+                const canCreate = ['admin', 'ketua', 'wakil_ketua', 'pengawas'].includes(user.role);
+                
+                // Surat untuk user yang login
+                const suratUser = surat.filter(s => s.userId === user.id);
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Surat Peringatan</h4>
+                            ${canCreate ? `<button class="btn btn-primary" onclick="App.showSuratForm()">
+                                <i class="fas fa-plus me-2"></i>Buat Surat Peringatan
+                            </button>` : ''}
+                        </div>
+                        
+                        ${canCreate ? `
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Semua Surat Peringatan</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-modern">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tanggal</th>
+                                                    <th>Untuk</th>
+                                                    <th>Level</th>
+                                                    <th>Alasan</th>
+                                                    <th>Pemberi</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${surat.map(s => {
+                                                    const target = users.find(u => u.id === s.userId);
+                                                    return `
+                                                        <tr>
+                                                            <td>${this.formatDate(s.tanggal)}</td>
+                                                            <td>${target?.nama || 'Tidak diketahui'}</td>
+                                                            <td>
+                                                                <span class="badge bg-${s.level === 'SP3' ? 'danger' : s.level === 'SP2' ? 'warning' : 'info'}">
+                                                                    ${s.level}
+                                                                </span>
+                                                            </td>
+                                                            <td>${s.alasan}</td>
+                                                            <td>${s.pemberi}</td>
+                                                            <td>
+                                                                <span class="badge bg-${s.status === 'dibaca' ? 'success' : 'warning'}">
+                                                                    ${s.status === 'dibaca' ? 'Sudah Dibaca' : 'Belum Dibaca'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    `;
+                                                }).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Surat untuk user -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Surat Peringatan Saya</h6>
+                            </div>
+                            <div class="card-body">
+                                ${suratUser.length === 0 ? 
+                                    '<p class="text-muted mb-0">Tidak ada surat peringatan untuk Anda</p>' :
+                                    suratUser.map(s => `
+                                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                            <div>
+                                                <span class="badge bg-${s.level === 'SP3' ? 'danger' : s.level === 'SP2' ? 'warning' : 'info'} me-2">${s.level}</span>
+                                                <span class="text-muted small">${this.formatDate(s.tanggal)}</span>
+                                                <p class="mb-0 small">${s.alasan}</p>
+                                                <p class="mb-0 text-muted small">Diberikan oleh: ${s.pemberi}</p>
+                                            </div>
+                                            <span class="badge bg-${s.status === 'dibaca' ? 'success' : 'warning'}">
+                                                ${s.status === 'dibaca' ? '✓ Dibaca' : 'Belum Dibaca'}
+                                            </span>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            showSuratForm() {
+                const users = StorageManager.getUsers();
+                const user = AuthManager.getCurrentUser();
+                
+                const modal = document.getElementById('formModal');
+                document.getElementById('formModalTitle').textContent = 'Buat Surat Peringatan';
+                
+                const formBody = document.getElementById('formModalBody');
+                formBody.innerHTML = `
+                    <form id="suratForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Untuk Anggota</label>
+                                <select class="form-select" id="sUserId" required>
+                                    <option value="">Pilih anggota...</option>
+                                    ${users.filter(u => u.id !== user.id).map(u => `
+                                        <option value="${u.id}">${u.nama} (${u.nro})</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Level Surat</label>
+                                <select class="form-select" id="sLevel">
+                                    <option value="SP1">SP1</option>
+                                    <option value="SP2">SP2</option>
+                                    <option value="SP3">SP3</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="sTanggal" value="${new Date().toISOString().split('T')[0]}" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Alasan</label>
+                                <textarea class="form-control" id="sAlasan" rows="3" required></textarea>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                this.modalInstance.show();
+                
+                document.getElementById('suratForm').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.saveSurat();
+                };
+            },
+
+            saveSurat() {
+                const surat = StorageManager.getSuratPeringatan();
+                const user = AuthManager.getCurrentUser();
+                
+                const data = {
+                    userId: parseInt(document.getElementById('sUserId').value),
+                    level: document.getElementById('sLevel').value,
+                    tanggal: document.getElementById('sTanggal').value,
+                    alasan: document.getElementById('sAlasan').value,
+                    pemberi: user.nama,
+                    status: 'belum_dibaca'
+                };
+                
+                if (!data.userId || !data.alasan) {
+                    UIHelper.showToast('Mohon isi semua field yang diperlukan!', 'error');
+                    return;
+                }
+                
+                const newSurat = {
+                    ...data,
+                    id: Math.max(0, ...surat.map(s => s.id)) + 1
+                };
+                surat.push(newSurat);
+                StorageManager.setSuratPeringatan(surat);
+                UIHelper.showToast('Surat peringatan berhasil dibuat!');
+                
+                this.modalInstance.hide();
+                this.navigateTo('surat');
+            },
+
+            // ============================================================
+            // PENGUMUMAN
+            // ============================================================
+
+            renderPengumuman(container) {
+                const user = AuthManager.getCurrentUser();
+                const pengumuman = StorageManager.getPengumuman();
+                const canPost = ['admin', 'ketua', 'wakil_ketua', 'sekretaris'].includes(user.role);
+                
+                // Sort by date descending
+                pengumuman.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+                
+                container.innerHTML = `
+                    <div class="fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Pengumuman</h4>
+                            ${canPost ? `<button class="btn btn-primary" onclick="App.showPengumumanForm()">
+                                <i class="fas fa-plus me-2"></i>Buat Pengumuman
+                            </button>` : ''}
+                        </div>
+                        
+                        <div class="row g-3">
+                            ${pengumuman.map(p => `
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">${p.judul}</h6>
+                                            <small class="text-muted">${this.formatDate(p.tanggal)}</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <p>${p.isi}</p>
+                                            <p class="text-muted small mb-0">
+                                                <i class="fas fa-user me-1"></i>${p.penulis}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${pengumuman.length === 0 ? '<p class="text-center text-muted">Belum ada pengumuman</p>' : ''}
+                    </div>
+                `;
+            },
+
+            showPengumumanForm() {
+                const user = AuthManager.getCurrentUser();
+                
+                const modal = document.getElementById('formModal');
+                document.getElementById('formModalTitle').textContent = 'Buat Pengumuman';
+                
+                const formBody = document.getElementById('formModalBody');
+                formBody.innerHTML = `
+                    <form id="pengumumanForm">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Judul</label>
+                                <input type="text" class="form-control" id="pJudul" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Isi Pengumuman</label>
+                                <textarea class="form-control" id="pIsi" rows="5" required></textarea>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                this.modalInstance.show();
+                
+                document.getElementById('pengumumanForm').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.savePengumuman();
+                };
+            },
+            savePengumuman() {
+                const pengumuman = StorageManager.getPengumuman();
+                const user = AuthManager.getCurrentUser();
+                
+                const data = {
+                    judul: document.getElementById('pJudul').value,
+                    isi: document.getElementById('pIsi').value,
+                    tanggal: new Date().toISOString().split('T')[0],
+                    penulis: user.nama
+                };
+                
+                if (!data.judul || !data.isi) {
+                    UIHelper.showToast('Mohon isi semua field yang diperlukan!', 'error');
+                    return;
+                }
+                
+                const newPengumuman = {
+                    ...data,
+                    id: Math.max(0, ...pengumuman.map(p => p.id)) + 1
+                };
+                pengumuman.push(newPengumuman);
+                StorageManager.setPengumuman(pengumuman);
+                UIHelper.showToast('Pengumuman berhasil dibuat!');
+                
+                this.modalInstance.hide();
+                this.navigateTo('pengumuman');
+            },
+
+            // ============================================================
+            // EXPORT FUNCTIONS (Simulasi)
+            // ============================================================
+
+            exportExcel() {
+                UIHelper.showToast('Export Excel akan segera tersedia', 'info');
+            },
+
+            exportPDF() {
+                UIHelper.showToast('Export PDF akan segera tersedia', 'info');
+            },
+
+            exportKeuanganExcel() {
+                UIHelper.showToast('Export Excel Keuangan akan segera tersedia', 'info');
+            },
+
+            exportKeuanganPDF() {
+                UIHelper.showToast('Export PDF Keuangan akan segera tersedia', 'info');
+            },
+
+            // ============================================================
+            // UTILITY FUNCTIONS
+            // ============================================================
+
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            },
+
+            formatDateTime(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        };
+
+        // ============================================================
+        // UI HELPER CLASS
+        // ============================================================
+
+        class UIHelper {
+            static showLoading() {
+                document.getElementById('loadingScreen').classList.remove('hidden');
+            }
+
+            static hideLoading() {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }
+
+            static showToast(message, type = 'success') {
+                const colors = {
+                    success: '#22c55e',
+                    error: '#ef4444',
+                    warning: '#f59e0b',
+                    info: '#06b6d4'
+                };
+                
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${colors[type] || colors.info};
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 10px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                    z-index: 9999;
+                    font-weight: 500;
+                    animation: slideIn 0.3s ease;
+                    max-width: 400px;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.3s';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // ============================================================
+        // GLOBAL FUNCTIONS (Dipanggil dari HTML)
+        // ============================================================
+
+        function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
+            
+            if (!username || !password) {
+                errorEl.textContent = 'Harap isi username dan password!';
+                errorEl.classList.remove('d-none');
+                return;
+            }
+            
+            const user = AuthManager.login(username, password);
+            if (user) {
+                errorEl.classList.add('d-none');
+                App.showApp();
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+            } else {
+                errorEl.textContent = 'Username atau password salah!';
+                errorEl.classList.remove('d-none');
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('Yakin ingin logout?')) {
+                AuthManager.logout();
+                App.showLogin();
+                UIHelper.showToast('Logout berhasil!', 'info');
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
+                sidebar.classList.toggle('closed');
+            } else {
+                sidebar.classList.toggle('closed');
+            }
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('darkModeIcon');
+            
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
+                icon.className = 'fas fa-moon';
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-sun';
+            }
+            
+            // Re-render charts to fix colors
+            if (App.currentPage === 'dashboard') {
+                App.renderPage('dashboard');
+            }
+        }
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+
+        // Add slideIn animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(100px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Start the app
+        UIHelper.showLoading();
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+
+        // Also run after a short delay to ensure everything loads
+        setTimeout(() => {
+            if (!AuthManager.isLoggedIn()) {
+                UIHelper.hideLoading();
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
+```
+
+---
